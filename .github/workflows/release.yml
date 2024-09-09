@@ -1,0 +1,60 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  # Adapted from: https://github.com/pypa/gh-action-pypi-publish#usage
+  pypi-publish:
+    name: Build, Lint, Test, Release to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://pypi.org/project/plover-cycle-translations/
+    permissions:
+      id-token: write
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install Lint, Type Checking Dependencies
+        run: python -m pip install --editable ".[test]"
+
+      - name: Run Linter
+        run: pylint plover_cycle_translations
+
+      - name: Run Type Checker
+        run: mypy plover_cycle_translations
+
+      - name: Install Build
+        run: python -m pip install --upgrade build
+
+      - name: Build
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - pypi-publish
+    if: always() && needs.pypi-publish.result == 'success'
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" \
+            --repo="$GITHUB_REPOSITORY" \
+            --title="$TAG" \
+            --generate-notes

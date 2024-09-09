@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+concurrency:
+  group: ci-tests-${{ github.ref }}-1
+  cancel-in-progress: true
+jobs:
+  ci:
+    name: Build, Lint, Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install Lint, Type Checking Dependencies
+        run: python -m pip install --editable ".[test]"
+
+      - name: Run Linter
+        run: pylint plover_cycle_translations
+
+      - name: Run Type Checker
+        run: mypy plover_cycle_translations

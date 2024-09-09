@@ -1,0 +1,5 @@
+[MAIN]
+ignored-modules =
+    plover.engine
+    plover.formatting
+    plover.registry
