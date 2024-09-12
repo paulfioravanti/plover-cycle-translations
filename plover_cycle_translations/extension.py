@@ -55,7 +55,10 @@ class CycleTranslations:
         action: _Action = ctx.new_action()
 
         if argument.upper() == "NEXT":
-            self._prepare_next_translation(ctx, action)
+            if self._translations:
+                self._prepare_next_translation(ctx, action)
+            else:
+                return action
         elif re.search(_WORD_LIST_DIVIDER, argument):
             self._init_translations(argument)
         else:
@@ -69,17 +72,14 @@ class CycleTranslations:
         previous_output: str = ctx.last_text(len(current_translation))
 
         if previous_output == current_translation:
-            self._index += 1
             # Reset index to zero if out of bounds
-            self._index = self._index % self._translations_length
+            self._index = (self._index + 1) % self._translations_length
 
             action.prev_replace = current_translation
             # Do not put a space once a translation has been cycled
             action.prev_attach = True
         else:
-            raise ValueError(
-                f"{previous_output} is not part of a cyclable list."
-            )
+            raise ValueError("Text is not part of a currently cyclable list.")
 
     def _init_translations(self, argument: str) -> None:
         self._translations = argument.split(_WORD_LIST_DIVIDER)
