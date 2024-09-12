@@ -60,7 +60,7 @@ class CycleTranslations:
             else:
                 return action
         elif re.search(_WORD_LIST_DIVIDER, argument):
-            self._init_translations(argument)
+            self._init_translations_from_argument(argument)
         else:
             raise ValueError("No comma-separated word list provided.")
 
@@ -81,7 +81,7 @@ class CycleTranslations:
         else:
             raise ValueError("Text is not part of a currently cyclable list.")
 
-    def _init_translations(self, argument: str) -> None:
+    def _init_translations_from_argument(self, argument: str) -> None:
         self._translations = argument.split(_WORD_LIST_DIVIDER)
         self._translations_length = len(self._translations)
         self._index = 0
