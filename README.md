@@ -2,10 +2,10 @@
 
 [![Build Status][Build Status image]][Build Status url] [![PyPI - Version][PyPI version image]][PyPI url] [![PyPI - Downloads][PyPI downloads image]][PyPI url] [![linting: pylint][linting image]][linting url]
 
-This [Plover][] [extension][] [plugin][] contains a [meta][] that allows you
+This [Plover][] [extension][] [plugin][] contains a [macro][] that allows you
 define multiple translations in a single outline, and then cycle through them
 [Alt-Tab][]- or [IME][]-style using a "selector stroke". It covers similar
-ground to Plover's [`retro_toggle_asterisk`][] [macro][], but is broader in
+ground to Plover's [`retro_toggle_asterisk`][] macro, but is broader in
 scope than just toggling between an outline and its asterisk-flagged equivalent
 (e.g. `"HAOEU": "high"` and `"HAO*EU": "hi"`).
 
@@ -67,7 +67,7 @@ If you wanted to standardise on the phonetic `SEPBT` outline for all three
 words, you could use this plugin to create a dictionary entry as follows:
 
 ```json
-"SEPBT": "{:CYCLE:sent,cent,scent}"
+"SEPBT": "=CYCLE:sent,cent,scent"
 ```
 
 This will output "sent" when stroked. You then use a "selector stroke" to cycle
@@ -75,12 +75,12 @@ to the next word in the comma-separated list of words, in the order they are
 defined. An example of a "selector stroke" dictionary entry would be:
 
 ```json
-"R*R": "{:CYCLE:NEXT}"
+"R*R": "=CYCLE:NEXT"
 ```
 
 As you cycle through the word list, each outputted word gets replaced with the
 next word entry. Once you hit the end of the list, the cycle begins again: in
-the example above, if you stroke `{:CYCLE:NEXT}` when you have output "scent",
+the example above, if you stroke `=CYCLE:NEXT` when you have output "scent",
 it will be replaced with "sent".
 
 ## Development
@@ -110,9 +110,10 @@ make sure your local development environment also uses Python 3.9.x.
 - [Pylint][] is used for code quality
 - [Mypy][] is used for static type checking
 
-Currently, there is not enough logic in the plugin to justify extraction to 
-other modules. Since the only parts of the plugin able to be tested are
-ones that do not rely directly on Plover, automated testing has not been
+Currently, there is not enough logic in the plugin that doesn't depend on
+internal state of the extension class to justify extraction to other modules.
+Since the only parts of the plugin able to be tested are ones that do not rely
+directly on Plover, automated testing with [Pytest][] has not really been
 possible.
 
 Run linting and type checking with the following commands:
@@ -181,6 +182,7 @@ plover --script plover_plugins uninstall plover-cycle-translations
 [Plover Plugins Registry]: https://github.com/openstenoproject/plover_plugins_registry
 [plugin]: https://plover.readthedocs.io/en/latest/plugins.html#types-of-plugins
 [Pylint]: https://github.com/pylint-dev/pylint
+[Pytest]: https://docs.pytest.org/en/stable/
 [`retro_toggle_asterisk`]: https://plover.readthedocs.io/en/latest/translation_language.html#other-formatting-actions
 [Tmuxinator]: https://github.com/tmuxinator/tmuxinator
 [`workflow_context.yml`]: https://github.com/openstenoproject/plover/blob/master/.github/workflows/ci/workflow_context.yml

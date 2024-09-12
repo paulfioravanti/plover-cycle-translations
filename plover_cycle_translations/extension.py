@@ -7,19 +7,21 @@ Plover entry point extension module for Plover Cycle Translations
 import re
 
 from plover.engine import StenoEngine
-from plover.formatting import (
-    _Action,
-    _Context
-)
+from plover.formatting import _Action
 from plover.registry import registry
+from plover.steno import Stroke
+from plover.translation import (
+    Translation,
+    Translator
+)
 
 
 _WORD_LIST_DIVIDER: str = ","
 
 class CycleTranslations:
     """
-    Extension class that also registers a meta plugin.
-    The meta deals with caching and cycling through a list of user-defined
+    Extension class that also registers a macro plugin.
+    The macro deals with caching and cycling through a list of user-defined
     translations in a single outline.
     """
     _engine: StenoEngine
@@ -35,53 +37,81 @@ class CycleTranslations:
         Sets up the meta plugin, steno engine hooks, and
         variable intialisations.
         """
-        self._translations = []
-        self._translations_length = 0
-        self._index = 0
-        registry.register_plugin("meta", "CYCLE", self._cycle_translations)
+        self._reset_translations()
+        registry.register_plugin("macro", "CYCLE", self._cycle_translations)
+        self._engine.hook_connect("translated", self._translated)
 
     def stop(self) -> None:
         """
-        Tears down the steno engine hooks -- no custom action needed.
+        Tears down the steno engine hooks.
         """
+        self._engine.hook_disconnect("translated", self._translated)
 
-    def _cycle_translations(self, ctx: _Context, argument: str) -> _Action:
+    def _cycle_translations(
+        self,
+        translator: Translator,
+        stroke: Stroke,
+        argument: str
+    ) -> None:
         """
         Initialises a `_translations` list of words based on the word list
         contained in the `argument`, and outputs the first entry.
         If `argument` is `NEXT`, then replace the previously outputted text with
         the next word in `_translations`, and cycle the list.
         """
-        action: _Action = ctx.new_action()
-
         if argument.upper() == "NEXT":
-            if self._translations:
-                self._prepare_next_translation(ctx, action)
-            else:
-                return action
+            if not self._translations:
+                raise ValueError(
+                    "Text is not in a cycleable list, "
+                    "or cycleable list for text needs to be re-stroked."
+                )
+
+            CycleTranslations._untranslate_last_translation(translator)
+            # Reset index to zero if out of bounds
+            self._index = (self._index + 1) % self._translations_length
         elif re.search(_WORD_LIST_DIVIDER, argument):
-            self._init_translations_from_argument(argument)
+            self._init_translations(argument)
         else:
             raise ValueError("No comma-separated word list provided.")
 
-        action.text = self._translations[self._index]
-        return action
-
-    def _prepare_next_translation(self, ctx: _Context, action: _Action) -> None:
         current_translation: str = self._translations[self._index]
-        previous_output: str = ctx.last_text(len(current_translation))
+        translator.translate_translation(
+            Translation([stroke], current_translation)
+        )
 
-        if previous_output == current_translation:
-            # Reset index to zero if out of bounds
-            self._index = (self._index + 1) % self._translations_length
+    def _translated(self, old: list[_Action], new: list[_Action]) -> None:
+        if not new: # ie an undo is stroked
+            if old and old[0].text in self._translations:
+                # When undoing (deleting) text that is in a cycleable list,
+                # reset the translations so that the previous text cannot
+                # unexpectedly be transformed using the deleted text's list.
+                self._reset_translations()
+            return
 
-            action.prev_replace = current_translation
-            # Do not put a space once a translation has been cycled
-            action.prev_attach = True
-        else:
-            raise ValueError("Text is not part of a currently cyclable list.")
+        action: _Action = new[0] # ie new text has been output
+        if not action.text in self._translations:
+            # New text has no need of the previous text's cycleable list.
+            # If it does not initalise its own new cycleable list in
+            # `self._translations`, reset them so that it cannot unexpectedly be
+            # transformed using the previous text's list.
+            self._reset_translations()
 
-    def _init_translations_from_argument(self, argument: str) -> None:
+    @staticmethod
+    def _untranslate_last_translation(translator: Translator) -> None:
+        translations: list[Translation] = translator.get_state().translations
+        if not translations:
+            raise ValueError(
+                "No translations output exist to attempt to cycle through."
+            )
+
+        translator.untranslate_translation(translations[-1])
+
+    def _reset_translations(self) -> None:
+        self._translations = []
+        self._translations_length = 0
+        self._index = 0
+
+    def _init_translations(self, argument: str) -> None:
         self._translations = argument.split(_WORD_LIST_DIVIDER)
         self._translations_length = len(self._translations)
         self._index = 0

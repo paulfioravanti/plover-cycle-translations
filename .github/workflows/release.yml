@@ -6,7 +6,7 @@ on:
 jobs:
   # Adapted from: https://github.com/pypa/gh-action-pypi-publish#usage
   pypi-publish:
-    name: Build, Lint, Test, Release to PyPI
+    name: Build, Lint, Release to PyPI
     runs-on: ubuntu-latest
     environment:
       name: release
