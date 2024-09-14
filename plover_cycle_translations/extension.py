@@ -79,9 +79,8 @@ class CycleTranslations:
             raise ValueError("No comma-separated word list provided.")
 
         if translations := self._translations:
-            next_translation: str = next(translations)
             translator.translate_translation(
-                Translation([stroke], next_translation)
+                Translation([stroke], next(translations))
             )
 
     def _translated(self, old: list[_Action], new: list[_Action]) -> None:
@@ -93,7 +92,7 @@ class CycleTranslations:
         if not new: # an undo is stroked
             if old and old[0].text in translations_list:
                 # When undoing (deleting) text that is in a cycleable list,
-                # reset the translations so that the previous text cannot
+                # reset the translations so that any text before it cannot
                 # unexpectedly be transformed using the deleted text's list.
                 self._reset_translations()
 
