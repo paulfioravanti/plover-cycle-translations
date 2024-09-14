@@ -4,7 +4,12 @@ Plover entry point extension module for Plover Cycle Translations
     - https://plover.readthedocs.io/en/latest/plugin-dev/extensions.html
     - https://plover.readthedocs.io/en/latest/plugin-dev/meta.html
 """
+from itertools import cycle
 import re
+from typing import (
+    Iterator,
+    Optional
+)
 
 from plover.engine import StenoEngine
 from plover.formatting import _Action
@@ -25,9 +30,8 @@ class CycleTranslations:
     translations in a single outline.
     """
     _engine: StenoEngine
-    _translations: list[str]
-    _translations_length: int
-    _index: int
+    _translations_list: Optional[list[str]]
+    _translations: Optional[Iterator[str]]
 
     def __init__(self, engine: StenoEngine) -> None:
         self._engine = engine
@@ -54,8 +58,10 @@ class CycleTranslations:
         argument: str
     ) -> None:
         """
-        Initialises a `_translations` list of words based on the word list
-        contained in the `argument`, and outputs the first entry.
+        Initialises a `_translations_list` list of words based on the word list
+        contained in the `argument`, and a cycleable `_translations` iterator
+        over `_translations_list`, that outputs the first entry.
+
         If `argument` is `NEXT`, then replace the previously outputted text with
         the next word in `_translations`, and cycle the list.
         """
@@ -63,33 +69,38 @@ class CycleTranslations:
             if not self._translations:
                 raise ValueError(
                     "Text is not in a cycleable list, "
-                    "or cycleable list for text needs to be re-stroked."
+                    "or cycleable text needs to be re-stroked."
                 )
 
             CycleTranslations._untranslate_last_translation(translator)
-            # Reset index to zero if out of bounds
-            self._index = (self._index + 1) % self._translations_length
         elif re.search(_WORD_LIST_DIVIDER, argument):
             self._init_translations(argument)
         else:
             raise ValueError("No comma-separated word list provided.")
 
-        current_translation: str = self._translations[self._index]
-        translator.translate_translation(
-            Translation([stroke], current_translation)
-        )
+        if translations := self._translations:
+            next_translation: str = next(translations)
+            translator.translate_translation(
+                Translation([stroke], next_translation)
+            )
 
     def _translated(self, old: list[_Action], new: list[_Action]) -> None:
-        if not new: # ie an undo is stroked
-            if old and old[0].text in self._translations:
+        translations_list: Optional[list[str]] = self._translations_list
+
+        if not translations_list:
+            return
+
+        if not new: # an undo is stroked
+            if old and old[0].text in translations_list:
                 # When undoing (deleting) text that is in a cycleable list,
                 # reset the translations so that the previous text cannot
                 # unexpectedly be transformed using the deleted text's list.
                 self._reset_translations()
+
             return
 
-        action: _Action = new[0] # ie new text has been output
-        if not action.text in self._translations:
+        # new text has been output
+        if not new[0].text in translations_list:
             # New text has no need of the previous text's cycleable list.
             # If it does not initalise its own new cycleable list in
             # `self._translations`, reset them so that it cannot unexpectedly be
@@ -107,11 +118,8 @@ class CycleTranslations:
         translator.untranslate_translation(translations[-1])
 
     def _reset_translations(self) -> None:
-        self._translations = []
-        self._translations_length = 0
-        self._index = 0
+        self._translations = self._translations_list = None
 
     def _init_translations(self, argument: str) -> None:
-        self._translations = argument.split(_WORD_LIST_DIVIDER)
-        self._translations_length = len(self._translations)
-        self._index = 0
+        self._translations_list = argument.split(_WORD_LIST_DIVIDER)
+        self._translations = cycle(self._translations_list)
