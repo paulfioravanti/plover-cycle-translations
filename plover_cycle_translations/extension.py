@@ -88,12 +88,16 @@ class CycleTranslations:
             )
 
     def _stroked(self, stroke: Stroke) -> None:
-        if self._translations_list and stroke == Stroke("*"): # undo
+        if self._translations and stroke == Stroke("*"): # undo
             self._reset_translations()
 
     def _translated(self, _old: list[_Action], new: list[_Action]) -> None:
         translations_list: Optional[list[str]] = self._translations_list
 
+        # NOTE: `translations_list` specifically needs to be used here instead
+        # of `translations` because it is not possible to gain access to the
+        # underlying collection inside a cycleable list to check for value
+        # inclusion/exclusion.
         if (
             translations_list
             and new
