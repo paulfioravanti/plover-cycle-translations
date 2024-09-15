@@ -67,18 +67,20 @@ class CycleTranslations:
         If `argument` is `NEXT`, then replace the previously outputted text with
         the next word in `_translations`, and cycle the list.
         """
-        if argument.upper() == "NEXT":
-            if not self._translations:
+        if re.search(_WORD_LIST_DIVIDER, argument):
+            self._init_translations(argument)
+        elif argument.upper() == "NEXT":
+            if self._translations:
+                CycleTranslations._untranslate_last_translation(translator)
+            else:
                 raise ValueError(
                     "Text is not in a cycleable list, "
                     "or cycleable text needs to be re-stroked."
                 )
-
-            CycleTranslations._untranslate_last_translation(translator)
-        elif re.search(_WORD_LIST_DIVIDER, argument):
-            self._init_translations(argument)
         else:
-            raise ValueError("No comma-separated word list provided.")
+            raise ValueError(
+                "No comma-separated word list or NEXT argument provided."
+            )
 
         if translations := self._translations:
             translator.translate_translation(
@@ -106,6 +108,7 @@ class CycleTranslations:
     @staticmethod
     def _untranslate_last_translation(translator: Translator) -> None:
         translations: list[Translation] = translator.get_state().translations
+
         if not translations:
             raise ValueError(
                 "No translations output exist to attempt to cycle through."
