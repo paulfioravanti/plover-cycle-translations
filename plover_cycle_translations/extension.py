@@ -109,12 +109,12 @@ class CycleTranslations:
     def _untranslate_last_translation(translator: Translator) -> None:
         translations: list[Translation] = translator.get_state().translations
 
-        if not translations:
+        if translations:
+            translator.untranslate_translation(translations[-1])
+        else:
             raise ValueError(
                 "No translations output exist to attempt to cycle through."
             )
-
-        translator.untranslate_translation(translations[-1])
 
     def _reset_translations(self) -> None:
         self._translations = self._translations_list = None
