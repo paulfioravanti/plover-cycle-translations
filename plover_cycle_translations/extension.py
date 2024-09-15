@@ -86,19 +86,17 @@ class CycleTranslations:
             )
 
     def _stroked(self, stroke: Stroke) -> None:
-        if not self._translations_list:
-            return
-
-        if stroke == Stroke("*"): # undo
+        if self._translations_list and stroke == Stroke("*"): # undo
             self._reset_translations()
 
     def _translated(self, _old: list[_Action], new: list[_Action]) -> None:
         translations_list: Optional[list[str]] = self._translations_list
 
-        if not translations_list:
-            return
-
-        if new and not new[0].text in translations_list:
+        if (
+            translations_list
+            and new
+            and not new[0].text in translations_list
+        ):
             # New text output outside of a cycle has no need of the previous
             # text's cycleable list. If it does not initalise its own new
             # cycleable list in `self._translations`, reset them so that it
