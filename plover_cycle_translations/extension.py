@@ -88,7 +88,7 @@ class CycleTranslations:
             )
 
     def _stroked(self, stroke: Stroke) -> None:
-        if self._translations and stroke == Stroke("*"): # undo
+        if self._translations and stroke == "*": # undo
             self._reset_translations()
 
     def _translated(self, _old: list[_Action], new: list[_Action]) -> None:
