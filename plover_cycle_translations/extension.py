@@ -43,12 +43,14 @@ class CycleTranslations:
         """
         self._reset_translations()
         registry.register_plugin("macro", "CYCLE", self._cycle_translations)
+        self._engine.hook_connect("stroked", self._stroked)
         self._engine.hook_connect("translated", self._translated)
 
     def stop(self) -> None:
         """
         Tears down the steno engine hooks.
         """
+        self._engine.hook_disconnect("stroked", self._stroked)
         self._engine.hook_disconnect("translated", self._translated)
 
     def _cycle_translations(
@@ -83,27 +85,24 @@ class CycleTranslations:
                 Translation([stroke], next(translations))
             )
 
-    def _translated(self, old: list[_Action], new: list[_Action]) -> None:
+    def _stroked(self, stroke: Stroke) -> None:
+        if not self._translations_list:
+            return
+
+        if stroke == Stroke("*"): # undo
+            self._reset_translations()
+
+    def _translated(self, _old: list[_Action], new: list[_Action]) -> None:
         translations_list: Optional[list[str]] = self._translations_list
 
         if not translations_list:
             return
 
-        if not new: # an undo is stroked
-            if old and old[0].text in translations_list:
-                # When undoing (deleting) text that is in a cycleable list,
-                # reset the translations so that any text before it cannot
-                # unexpectedly be transformed using the deleted text's list.
-                self._reset_translations()
-
-            return
-
-        # new text has been output
-        if not new[0].text in translations_list:
-            # New text has no need of the previous text's cycleable list.
-            # If it does not initalise its own new cycleable list in
-            # `self._translations`, reset them so that it cannot unexpectedly be
-            # transformed using the previous text's list.
+        if new and not new[0].text in translations_list:
+            # New text output outside of a cycle has no need of the previous
+            # text's cycleable list. If it does not initalise its own new
+            # cycleable list in `self._translations`, reset them so that it
+            # cannot unexpectedly be transformed using the previous text's list.
             self._reset_translations()
 
     @staticmethod
