@@ -8,7 +8,8 @@ from itertools import cycle
 import re
 from typing import (
     Iterator,
-    Optional
+    Optional,
+    cast
 )
 
 from plover.engine import StenoEngine
@@ -53,6 +54,7 @@ class CycleTranslations:
         self._engine.hook_disconnect("stroked", self._stroked)
         self._engine.hook_disconnect("translated", self._translated)
 
+    # Macro entry function
     def _cycle_translations(
         self,
         translator: Translator,
@@ -67,62 +69,77 @@ class CycleTranslations:
         If `argument` is `NEXT`, then replace the previously outputted text with
         the next word in `_translations`, and cycle the list.
         """
-        if re.search(_WORD_LIST_DIVIDER, argument):
-            self._init_translations(argument)
+        if self._contains_word_list(argument):
+            self._init_translations(translator, stroke, argument)
         elif argument.upper() == "NEXT":
-            if self._translations:
-                CycleTranslations._untranslate_last_translation(translator)
-            else:
-                raise ValueError(
-                    "Text is not in a cycleable list, "
-                    "or cycleable text needs to be re-stroked."
-                )
+            self._cycle_next_translation(translator, stroke)
         else:
             raise ValueError(
                 "No comma-separated word list or NEXT argument provided."
             )
 
-        if translations := self._translations:
-            translator.translate_translation(
-                Translation([stroke], next(translations))
-            )
-
+    # Callback
     def _stroked(self, stroke: Stroke) -> None:
         if self._translations and stroke == "*": # undo
             self._reset_translations()
 
+    # Callback
     def _translated(self, _old: list[_Action], new: list[_Action]) -> None:
-        translations_list: Optional[list[str]] = self._translations_list
+        # New text output outside of a cycle has no need of the previous
+        # text's cycleable list. If it does not initalise its own new
+        # cycleable list in `self._translations`, reset them so that it
+        # cannot unexpectedly be transformed using the previous text's list.
+        if self._new_uncycleable_text_translated(new):
+            self._reset_translations()
 
+    def _contains_word_list(self, argument: str) -> bool:
+        return cast(bool, re.search(_WORD_LIST_DIVIDER, argument))
+
+    def _new_uncycleable_text_translated(self, new: list[_Action]) -> bool:
         # NOTE: `translations_list` specifically needs to be used here instead
         # of `translations` because it is not possible to gain access to the
         # underlying collection inside a cycleable list to check for value
         # inclusion/exclusion.
-        if (
+        translations_list: Optional[list[str]] = self._translations_list
+
+        return cast(
+            bool,
             translations_list
             and new
             and not new[0].text in translations_list
+        )
+
+    def _cycle_next_translation(
+        self,
+        translator: Translator,
+        stroke: Stroke
+    ) -> None:
+        if (
+            (translations := translator.get_state().translations)
+            and (cycled_translations := self._translations)
         ):
-            # New text output outside of a cycle has no need of the previous
-            # text's cycleable list. If it does not initalise its own new
-            # cycleable list in `self._translations`, reset them so that it
-            # cannot unexpectedly be transformed using the previous text's list.
-            self._reset_translations()
-
-    @staticmethod
-    def _untranslate_last_translation(translator: Translator) -> None:
-        translations: list[Translation] = translator.get_state().translations
-
-        if translations:
             translator.untranslate_translation(translations[-1])
+            translator.translate_translation(
+                Translation([stroke], next(cycled_translations))
+            )
         else:
             raise ValueError(
-                "No translations output exist to attempt to cycle through."
+                "Text not cycleable, or cycleable text needs to be re-stroked."
             )
 
     def _reset_translations(self) -> None:
-        self._translations = self._translations_list = None
+        self._translations_list = self._translations = None
 
-    def _init_translations(self, argument: str) -> None:
-        self._translations_list = argument.split(_WORD_LIST_DIVIDER)
-        self._translations = cycle(self._translations_list)
+    def _init_translations(
+        self,
+        translator: Translator,
+        stroke: Stroke,
+        argument: str
+    ) -> None:
+        translations_list: list[str] = argument.split(_WORD_LIST_DIVIDER)
+        translations: Iterator[str] = cycle(translations_list)
+        translator.translate_translation(
+            Translation([stroke], next(translations))
+        )
+        self._translations_list = translations_list
+        self._translations = translations
