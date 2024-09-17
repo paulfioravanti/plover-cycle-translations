@@ -69,7 +69,7 @@ class CycleTranslations:
         If `argument` is `NEXT`, then replace the previously outputted text with
         the next word in `_translations`, and cycle the list.
         """
-        if self._contains_word_list(argument):
+        if CycleTranslations._contains_word_list(argument):
             self._init_translations(translator, stroke, argument)
         elif argument.upper() == "NEXT":
             self._cycle_next_translation(translator, stroke)
@@ -92,7 +92,25 @@ class CycleTranslations:
         if self._new_uncycleable_text_translated(new):
             self._reset_translations()
 
-    def _contains_word_list(self, argument: str) -> bool:
+    def _reset_translations(self) -> None:
+        self._translations_list = self._translations = None
+
+    def _init_translations(
+        self,
+        translator: Translator,
+        stroke: Stroke,
+        argument: str
+    ) -> None:
+        translations_list: list[str] = argument.split(_WORD_LIST_DIVIDER)
+        translations: Iterator[str] = cycle(translations_list)
+        translator.translate_translation(
+            Translation([stroke], next(translations))
+        )
+        self._translations_list = translations_list
+        self._translations = translations
+
+    @staticmethod
+    def _contains_word_list(argument: str) -> bool:
         return cast(bool, re.search(_WORD_LIST_DIVIDER, argument))
 
     def _new_uncycleable_text_translated(self, new: list[_Action]) -> bool:
@@ -126,20 +144,3 @@ class CycleTranslations:
             raise ValueError(
                 "Text not cycleable, or cycleable text needs to be re-stroked."
             )
-
-    def _reset_translations(self) -> None:
-        self._translations_list = self._translations = None
-
-    def _init_translations(
-        self,
-        translator: Translator,
-        stroke: Stroke,
-        argument: str
-    ) -> None:
-        translations_list: list[str] = argument.split(_WORD_LIST_DIVIDER)
-        translations: Iterator[str] = cycle(translations_list)
-        translator.translate_translation(
-            Translation([stroke], next(translations))
-        )
-        self._translations_list = translations_list
-        self._translations = translations
