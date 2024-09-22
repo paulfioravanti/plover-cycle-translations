@@ -18,29 +18,6 @@ could form the basis of some dictionary entries.
 
 ## Install
 
-### Pre-Plover Plugin Registry inclusion (Current)
-
-```console
-git clone git@github.com:paulfioravanti/plover-cycle-translations.git
-cd plover-cycle-translations
-plover --script plover_plugins install --editable .
-```
-
-> Where `plover` in the command is a reference to your locally installed version
-> of Plover. See the [Invoke Plover from the command line][] page for details on
-> how to create that reference.
-
-Then:
-
-1. When it finishes installing, restart Plover
-2. Open the Plover Configuration screen (either click the
-   Configuration icon, or from the main Plover application menu, select
-   `Preferences...`)
-3. Open the Plugins tab
-4. Check the box next to `plover_cycle_translations` to activate the plugin
-
-### Post-Plover Plugin Registry inclusion (Future)
-
 1. In the Plover application, open the Plugins Manager (either click the Plugins
    Manager icon, or from the `Tools` menu, select `Plugins Manager`).
 2. From the list of plugins, find `plover-cycle-translations`
