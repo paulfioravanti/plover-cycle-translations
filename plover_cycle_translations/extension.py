@@ -4,6 +4,7 @@ Plover entry point extension module for Plover Cycle Translations
     - https://plover.readthedocs.io/en/latest/plugin-dev/extensions.html
     - https://plover.readthedocs.io/en/latest/plugin-dev/meta.html
 """
+
 from itertools import cycle
 import re
 from typing import (
@@ -30,6 +31,7 @@ class CycleTranslations:
     The macro deals with caching and cycling through a list of user-defined
     translations in a single outline.
     """
+
     _engine: StenoEngine
     _translations_list: Optional[list[str]]
     _translations: Optional[Iterator[str]]
@@ -124,7 +126,7 @@ class CycleTranslations:
             bool,
             translations_list
             and new
-            and not new[0].text in translations_list
+            and new[0].text not in translations_list
         )
 
     def _cycle_next_translation(
