@@ -10,6 +10,7 @@ import re
 from typing import (
     Iterator,
     Optional,
+    Pattern,
     cast
 )
 
@@ -24,6 +25,7 @@ from plover.translation import (
 
 
 _WORD_LIST_DIVIDER: str = ","
+_CYCLE_LIST: Pattern[str] = re.compile("=CYCLE:([A-Za-z0-9,]+)")
 
 class CycleTranslations:
     """
@@ -86,13 +88,39 @@ class CycleTranslations:
             self._reset_translations()
 
     # Callback
-    def _translated(self, _old: list[_Action], new: list[_Action]) -> None:
+    def _translated(self, old: list[_Action], new: list[_Action]) -> None:
         # New text output outside of a cycle has no need of the previous
         # text's cycleable list. If it does not initalise its own new
         # cycleable list in `self._translations`, reset them so that it
         # cannot unexpectedly be transformed using the previous text's list.
         if self._new_uncycleable_text_translated(new):
             self._reset_translations()
+
+        if (
+            old
+            and new
+            and (newest_action := new[-1])
+            and (
+                translations_list_match := re.match(
+                    _CYCLE_LIST,
+                    newest_action.text
+                )
+            )
+        ):
+            translations_list_group = translations_list_match.group(1)
+            translations_list: list[str] = (
+                translations_list_group.split(_WORD_LIST_DIVIDER)
+            )
+            translations: Iterator[str] = cycle(translations_list)
+            newest_action.text = next(translations)
+            translator = self._engine.translator_state
+            translator_translations = translator.translations
+            # pylint: disable-next=protected-access
+            self._engine._translator.untranslate_translation(
+                translator_translations[-1]
+            )
+            self._translations_list = translations_list
+            self._translations = translations
 
     def _reset_translations(self) -> None:
         self._translations_list = self._translations = None
