@@ -25,7 +25,7 @@ from plover.translation import (
 
 
 _WORD_LIST_DIVIDER: str = ","
-_CYCLE_LIST: Pattern[str] = re.compile("=CYCLE:([A-Za-z0-9,]+)", re.IGNORECASE)
+_CYCLEABLE_LIST: Pattern[str] = re.compile("=CYCLE:(.+)", re.IGNORECASE)
 
 class CycleTranslations:
     """
@@ -99,15 +99,12 @@ class CycleTranslations:
         # Multistroke outlines that return a CYCLE macro definition will end up
         # here, rather than `self.cycle_translations` being called.
         if (translations_list := CycleTranslations._check_cycleable_list(new)):
-            self._init_cycle_from_multistroke(translations_list, new[-1])
+            self._init_cycle_from_multistroke(new[-1], translations_list)
 
     @staticmethod
     def _check_cycleable_list(new: list[_Action]) -> Optional[str]:
-        if (
-            new and
-            (cycleable_list_match := re.match(_CYCLE_LIST, new[-1].text))
-        ):
-            return cycleable_list_match.group(1)
+        if new and (list_match := re.match(_CYCLEABLE_LIST, new[-1].text)):
+            return list_match.group(1)
 
         return None
 
@@ -131,13 +128,13 @@ class CycleTranslations:
 
     def _init_cycle_from_multistroke(
         self,
-        translations_list: str,
         action: _Action,
+        translations_list: str,
     ) -> None:
         translations: Iterator[str] = self._init_translations(translations_list)
         action.text = next(translations)
         # NOTE: There seems to be no public API to access the engine
-        # translator, so blunt force protected access.
+        # `translator`, so deliberately access protected property.
         # pylint: disable-next=protected-access
         self._engine._translator.untranslate_translation(
             self._engine.translator_state.translations[-1]
