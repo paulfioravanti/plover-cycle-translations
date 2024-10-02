@@ -25,7 +25,7 @@ from plover.translation import (
 
 
 _WORD_LIST_DIVIDER: str = ","
-_CYCLE_LIST: Pattern[str] = re.compile("=CYCLE:([A-Za-z0-9,]+)")
+_CYCLE_LIST: Pattern[str] = re.compile("=CYCLE:([A-Za-z0-9,]+)", re.IGNORECASE)
 
 class CycleTranslations:
     """
@@ -73,8 +73,8 @@ class CycleTranslations:
         If `argument` is `NEXT`, then replace the previously outputted text with
         the next word in `_translations`, and cycle the list.
         """
-        if CycleTranslations._contains_word_list(argument):
-            self._init_translations(translator, stroke, argument)
+        if CycleTranslations._has_word_list(argument):
+            self._init_cycle(translator, stroke, argument)
         elif argument.upper() == "NEXT":
             self._cycle_next_translation(translator, stroke)
         else:
@@ -88,62 +88,71 @@ class CycleTranslations:
             self._reset_translations()
 
     # Callback
-    def _translated(self, old: list[_Action], new: list[_Action]) -> None:
+    def _translated(self, _old: list[_Action], new: list[_Action]) -> None:
         # New text output outside of a cycle has no need of the previous
         # text's cycleable list. If it does not initalise its own new
         # cycleable list in `self._translations`, reset them so that it
         # cannot unexpectedly be transformed using the previous text's list.
-        if self._new_uncycleable_text_translated(new):
+        if self._has_new_uncycleable_text(new):
             self._reset_translations()
 
+        # Multistroke outlines that return a CYCLE macro definition will end up
+        # here, rather than `self.cycle_translations` being called.
+        if (translations_list := CycleTranslations._check_cycleable_list(new)):
+            self._init_cycle_from_multistroke(translations_list, new[-1])
+
+    @staticmethod
+    def _check_cycleable_list(new: list[_Action]) -> Optional[str]:
         if (
-            old
-            and new
-            and (newest_action := new[-1])
-            and (
-                translations_list_match := re.match(
-                    _CYCLE_LIST,
-                    newest_action.text
-                )
-            )
+            new and
+            (cycleable_list_match := re.match(_CYCLE_LIST, new[-1].text))
         ):
-            translations_list_group = translations_list_match.group(1)
-            translations_list: list[str] = (
-                translations_list_group.split(_WORD_LIST_DIVIDER)
-            )
-            translations: Iterator[str] = cycle(translations_list)
-            newest_action.text = next(translations)
-            translator = self._engine.translator_state
-            translator_translations = translator.translations
-            # pylint: disable-next=protected-access
-            self._engine._translator.untranslate_translation(
-                translator_translations[-1]
-            )
-            self._translations_list = translations_list
-            self._translations = translations
+            return cycleable_list_match.group(1)
+
+        return None
+
+    @staticmethod
+    def _has_word_list(argument: str) -> bool:
+        return cast(bool, re.search(_WORD_LIST_DIVIDER, argument))
 
     def _reset_translations(self) -> None:
         self._translations_list = self._translations = None
 
-    def _init_translations(
+    def _init_cycle(
         self,
         translator: Translator,
         stroke: Stroke,
         argument: str
     ) -> None:
-        translations_list: list[str] = argument.split(_WORD_LIST_DIVIDER)
-        translations: Iterator[str] = cycle(translations_list)
+        translations: Iterator[str] = self._init_translations(argument)
         translator.translate_translation(
             Translation([stroke], next(translations))
         )
+
+    def _init_cycle_from_multistroke(
+        self,
+        translations_list: str,
+        action: _Action,
+    ) -> None:
+        translations: Iterator[str] = self._init_translations(translations_list)
+        action.text = next(translations)
+        # NOTE: There seems to be no public API to access the engine
+        # translator, so blunt force protected access.
+        # pylint: disable-next=protected-access
+        self._engine._translator.untranslate_translation(
+            self._engine.translator_state.translations[-1]
+        )
+
+    def _init_translations(self, argument: str) -> Iterator[str]:
+        translations_list: list[str] = argument.split(_WORD_LIST_DIVIDER)
+        translations: Iterator[str] = cycle(translations_list)
+
         self._translations_list = translations_list
         self._translations = translations
 
-    @staticmethod
-    def _contains_word_list(argument: str) -> bool:
-        return cast(bool, re.search(_WORD_LIST_DIVIDER, argument))
+        return translations
 
-    def _new_uncycleable_text_translated(self, new: list[_Action]) -> bool:
+    def _has_new_uncycleable_text(self, new: list[_Action]) -> bool:
         # NOTE: `translations_list` specifically needs to be used here instead
         # of `translations` because it is not possible to gain access to the
         # underlying collection inside a cycleable list to check for value
@@ -154,7 +163,7 @@ class CycleTranslations:
             bool,
             translations_list
             and new
-            and new[0].text not in translations_list
+            and new[-1].text not in translations_list
         )
 
     def _cycle_next_translation(
