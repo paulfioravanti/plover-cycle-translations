@@ -103,8 +103,13 @@ class CycleTranslations:
 
     @staticmethod
     def _check_cycleable_list(new: list[_Action]) -> Optional[str]:
-        if new and (list_match := re.match(_CYCLEABLE_LIST, new[-1].text)):
-            return list_match.group(1)
+        if (
+            new
+            and (newest_action_text := new[-1].text)
+            and CycleTranslations._has_word_list(newest_action_text)
+            and (match := re.match(_CYCLEABLE_LIST, newest_action_text))
+        ):
+            return match.group(1)
 
         return None
 
