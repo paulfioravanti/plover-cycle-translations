@@ -13,8 +13,10 @@ Cycling translations can be helpful for disambiguating between [homophones][]
 (words that are pronounced the same but differ in spelling; e.g. "sent", "cent",
 and "scent"), or words and their similar sounding [proper nouns][] (e.g. "mark",
 "Mark", and "Marc") with a single outline, rather than needing to remember all
-their respective outlines. See [here][] for examples of "[multinyms][]" that
-could form the basis of some dictionary entries.
+their respective outlines.
+
+For some examples of cycleable list entries to add to your own steno
+dictionaries, see [here][].
 
 ## Install
 
@@ -59,6 +61,19 @@ As you cycle through the word list, each outputted word gets replaced with the
 next word entry. Once you hit the end of the list, the cycle begins again: in
 the example above, if you stroke `=CYCLE:NEXT` when you have output "scent",
 it will be replaced with "sent".
+
+Cycleable dictionary entries are not limited to just single stroke outlines.
+Multiple stroke outline entries are also supported:
+
+```json
+"ABG/SEL": "=CYCLE:axel,axle,axil"
+```
+
+Non-text characters like emoji are also supported:
+
+```json
+"H-PBD": "=CYCLE:👍,👎,👊"
+```
 
 ## Development
 
@@ -134,7 +149,7 @@ plover --script plover_plugins uninstall plover-cycle-translations
 [extension]: https://plover.readthedocs.io/en/latest/plugin-dev/extensions.html
 [fingerspelled "C"]: https://www.artofchording.com/sounds/fingerspelling.html#letter-c
 [Git]: https://git-scm.com/
-[here]: https://people.sc.fsu.edu/~jburkardt/fun/wordplay/multinyms.html
+[here]: https://github.com/paulfioravanti/steno-dictionaries/blob/main/dictionaries/cycleable.md
 [homophones]: https://en.wikipedia.org/wiki/Homophone
 [IME]: https://en.wikipedia.org/wiki/Input_method
 [Invoke Plover from the command line]: https://github.com/openstenoproject/plover/wiki/Invoke-Plover-from-the-command-line
@@ -144,7 +159,6 @@ plover --script plover_plugins uninstall plover-cycle-translations
 [linting url]: https://github.com/pylint-dev/pylint
 [macro]: https://plover.readthedocs.io/en/latest/plugin-dev/macros.html
 [meta]: https://plover.readthedocs.io/en/latest/plugin-dev/metas.html
-[multinyms]: https://en.wikipedia.org/wiki/Homophone#English
 [Mypy]: https://github.com/python/mypy
 [orthographic]: https://en.wikipedia.org/wiki/Orthography
 [phonetic]: https://en.wikipedia.org/wiki/Phonetics
