@@ -3,7 +3,7 @@
 default: lint typecheck
 
 lint:
-  pylint plover_cycle_translations
+  pylint src
 
 typecheck:
-  mypy plover_cycle_translations
+  mypy src
