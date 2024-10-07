@@ -165,8 +165,32 @@ class CycleTranslations:
             bool,
             translations_list
             and new
-            and new[-1].text not in translations_list
+            and CycleTranslations._is_unknown_translation(
+                new[-1],
+                translations_list
+            )
         )
+
+    @staticmethod
+    def _is_unknown_translation(
+        action: _Action,
+        translations_list: list[str]
+    ) -> bool:
+        # Check for prefix translations
+        if action.next_attach:
+            return f"{{{action.text}^}}" not in translations_list
+
+        # Check for suffix translations. Non-suffix translations will come
+        # through on _Actions with prev_attach=True if stroked after a prefix,
+        # so we need to check whether both the text and its suffix version are
+        # absent from the `translations_list`.
+        if action.prev_attach:
+            return (
+                action.text not in translations_list
+                and f"{{^{action.text}}}" not in translations_list
+            )
+
+        return action.text not in translations_list
 
     def _cycle_next_translation(
         self,

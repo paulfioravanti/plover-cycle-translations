@@ -69,6 +69,12 @@ Multiple stroke outline entries are also supported:
 "ABG/SEL": "=CYCLE:axel,axle,axil"
 ```
 
+Prefix and suffix entries are also supported:
+
+```json
+"PW*EU": "=CYCLE:{bi^},by,buy,bye"
+```
+
 Non-text characters like emoji are also supported:
 
 ```json
