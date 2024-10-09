@@ -51,7 +51,7 @@ words, you could use this plugin to create a dictionary entry as follows:
 
 This will output "sent" when stroked. You then use a "selector stroke" to cycle
 to the next word in the comma-separated list of words, in the order they are
-defined. An example of a "selector stroke" dictionary entry would be:
+defined. An example of a selector stroke dictionary entry would be:
 
 ```json
 "R*R": "=CYCLE:NEXT"
@@ -61,6 +61,13 @@ As you cycle through the word list, each outputted word gets replaced with the
 next word entry. Once you hit the end of the list, the cycle begins again: in
 the example above, if you stroke `=CYCLE:NEXT` when you have output "scent",
 it will be replaced with "sent".
+
+If you have a particularly long list that you also want to cycle backwards
+through, you can use a "previous" selector stroke to do so, like:
+
+```json
+"R*RB": "=CYCLE:PREVIOUS"
+```
 
 Cycleable dictionary entries are not limited to just single stroke outlines.
 Multiple stroke outline entries are also supported:
