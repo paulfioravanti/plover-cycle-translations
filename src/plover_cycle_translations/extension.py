@@ -25,8 +25,8 @@ from plover.translation import (
 
 _WORD_LIST_DIVIDER: str = ","
 _CYCLEABLE_LIST: Pattern[str] = re.compile("=CYCLE:(.+)", re.IGNORECASE)
-_NEXT: int = 1
-_PREVIOUS: int = -1
+_NEXT: int = -1
+_PREVIOUS: int = 1
 _NEWEST: int = -1
 _FIRST: int = 0
 
