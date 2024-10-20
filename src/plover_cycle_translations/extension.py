@@ -91,7 +91,7 @@ class CycleTranslations:
 
     # Callback
     def _stroked(self, stroke: Stroke) -> None:
-        if self._translations and stroke == "*": # undo
+        if self._translations and stroke.is_correction:
             self._translations = None
 
     # Callback
