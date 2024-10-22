@@ -1,0 +1,5 @@
+[run]
+# Since the cycle module uses Plover modules, it cannot currently be included
+# for testing.
+omit =
+    src/plover_cycle_translations/translation/cycle.py

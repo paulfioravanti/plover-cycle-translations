@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Install Lint, Type Checking Dependencies
+      - name: Install Test, Lint, Type Checking Dependencies
         run: python -m pip install --editable ".[test]"
 
       - name: Run Linter
@@ -30,6 +30,9 @@ jobs:
 
       - name: Run Type Checker
         run: mypy src
+
+      - name: Run Tests
+        run: pytest
 
       - name: Install Build
         run: python -m pip install --upgrade build
