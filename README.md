@@ -9,14 +9,21 @@ ground to Plover's [`retro_toggle_asterisk`][] macro, but is broader in
 scope than just toggling between an outline and its asterisk-flagged equivalent
 (e.g. `"HAOEU": "high"` and `"HAO*EU": "hi"`).
 
-Cycling translations can be helpful for disambiguating between [homophones][]
-(words that are pronounced the same but differ in spelling; e.g. "sent", "cent",
-and "scent"), or words and their similar sounding [proper nouns][] (e.g. "mark",
-"Mark", and "Marc") with a single outline, rather than needing to remember all
-their respective outlines.
+Cycling translations can be helpful for disambiguating between:
+
+- [homophones][] (words that are pronounced the same but differ in spelling;
+  e.g. "sent", "cent", and "scent")
+- words and their similar sounding [proper nouns][] (e.g. "mark", "Mark", and
+  "Marc")
+- differences in regional spelling for the same word (e.g. "colour", "color")
+
+These variants can be defined with a single outline, rather than needing to
+remember all their respective outlines. Alternatively, all of their original
+outlines can be edited or overridden to be cycleable, so it will not matter
+which variant's outline you stroke, you will always have the option to cycle.
 
 For some examples of cycleable list entries to add to your own steno
-dictionaries, see [here][].
+dictionaries that encompass all of the points above, see [here][].
 
 ## Install
 
@@ -112,20 +119,29 @@ make sure your local development environment also uses Python 3.9.x.
 
 ### Testing
 
+- [Pytest][] is used for testing
+- [Coverage.py][] and [pytest-cov][] are used for test coverage, and to run
+  coverage within Pytest
 - [Pylint][] is used for code quality
 - [Mypy][] is used for static type checking
 
-Currently, there is not enough logic in the plugin that doesn't depend on
-internal state of the extension class to justify extraction to other modules.
-Since the only parts of the plugin able to be tested are ones that do not rely
-directly on Plover, automated testing with [Pytest][] has not really been
-possible.
+Currently, the only parts able to be tested are ones that do not rely directly
+on Plover.
 
-Run linting and type checking with the following commands:
+Run tests, coverage, and linting with the following commands:
 
 ```console
+pytest --cov --cov-report=term-missing
 pylint plover_cycle_translations
 mypy plover_cycle_translations
+```
+
+To get a HTML test coverage report:
+
+```console
+coverage run --module pytest
+coverage html
+open htmlcov/index.html
 ```
 
 If you are a [`just`][] user, you may find the [`justfile`][] useful during
@@ -133,7 +149,7 @@ development in running multiple code quality commands. You can run the following
 command from the project root directory:
 
 ```console
-just
+just --working-directory . --justfile test/justfile
 ```
 
 ### Deploying Changes
@@ -159,6 +175,7 @@ plover --script plover_plugins uninstall plover-cycle-translations
 [Alt-Tab]: https://en.wikipedia.org/wiki/Alt-Tab
 [Build Status image]: https://github.com/paulfioravanti/plover-cycle-translations/actions/workflows/ci.yml/badge.svg
 [Build Status url]: https://github.com/paulfioravanti/plover-cycle-translations/actions/workflows/ci.yml
+[Coverage.py]: https://github.com/nedbat/coveragepy
 [extension]: https://plover.readthedocs.io/en/latest/plugin-dev/extensions.html
 [fingerspelled "C"]: https://www.artofchording.com/sounds/fingerspelling.html#letter-c
 [Git]: https://git-scm.com/
@@ -187,6 +204,7 @@ plover --script plover_plugins uninstall plover-cycle-translations
 [plugin]: https://plover.readthedocs.io/en/latest/plugins.html#types-of-plugins
 [Pylint]: https://github.com/pylint-dev/pylint
 [Pytest]: https://docs.pytest.org/en/stable/
+[pytest-cov]: https://github.com/pytest-dev/pytest-cov/
 [`retro_toggle_asterisk`]: https://plover.readthedocs.io/en/latest/translation_language.html#other-formatting-actions
 [Tmuxinator]: https://github.com/tmuxinator/tmuxinator
 [`workflow_context.yml`]: https://github.com/openstenoproject/plover/blob/master/.github/workflows/ci/workflow_context.yml
