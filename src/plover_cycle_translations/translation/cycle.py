@@ -37,8 +37,8 @@ def cycle(
     outputs the next translation in the cycleable list.
     """
     if (
-        translations and
-        (translator_translations := translator.get_state().translations)
+        translations
+        and (translator_translations := translator.get_state().translations)
     ):
         translator.untranslate_translation(translator_translations[NEWEST])
         translations.rotate(direction)
